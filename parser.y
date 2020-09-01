@@ -95,6 +95,7 @@ import (
 	convert           "CONVERT"
 	create            "CREATE"
 	cross             "CROSS"
+	cube              "CUBE"
 	cumeDist          "CUME_DIST"
 	currentDate       "CURRENT_DATE"
 	currentTime       "CURRENT_TIME"
@@ -226,6 +227,7 @@ import (
 	revoke            "REVOKE"
 	right             "RIGHT"
 	rlike             "RLIKE"
+	rollup            "ROLLUP"
 	row               "ROW"
 	rows              "ROWS"
 	rowNumber         "ROW_NUMBER"
@@ -934,6 +936,7 @@ import (
 	GetFormatSelector                      "{DATE|DATETIME|TIME|TIMESTAMP}"
 	GlobalScope                            "The scope of variable"
 	GroupByClause                          "GROUP BY clause"
+	GroupByModifierOpt                     "GROUP BY modifier"
 	HavingClause                           "HAVING clause"
 	HandleRange                            "handle range"
 	HandleRangeList                        "handle range list"
@@ -1342,6 +1345,7 @@ import (
 %precedence lowerThanComma
 %precedence ','
 %precedence higherThanComma
+%left with
 
 %start	Start
 
@@ -4892,9 +4896,27 @@ FieldList:
 	}
 
 GroupByClause:
-	"GROUP" "BY" ByList
+	"GROUP" "BY" ByList GroupByModifierOpt
 	{
-		$$ = &ast.GroupByClause{Items: $3.([]*ast.ByItem)}
+		g := &ast.GroupByClause{Items: $3.([]*ast.ByItem)}
+		if $4 != nil {
+			g.With = $4.(ast.WithType)
+		}
+		$$ = g
+	}
+
+GroupByModifierOpt:
+	%prec empty
+	{
+		$$ = nil
+	}
+|	"WITH" "ROLLUP"
+	{
+		$$ = ast.WithRollup
+	}
+|	"WITH" "CUBE"
+	{
+		$$ = ast.WithCube
 	}
 
 HavingClause:
